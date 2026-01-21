@@ -5,9 +5,15 @@ export default function WalletButton() {
     const { wallets, publicKey, select, connect, disconnect, connecting } = useWallet()
     const [showModal, setShowModal] = useState(false)
 
-    const handleConnect = async (walletAdapter) => {
+    const handleConnect = async () => {
         try {
-            await select(walletAdapter.name)
+            const leo = wallets.find(w => w.adapter.name.includes("Leo"))
+            if (!leo) {
+                console.error('Leo Wallet not found')
+                return
+            }
+
+            select(leo.adapter.name)
             await connect()
             setShowModal(false)
         } catch (error) {
@@ -63,7 +69,7 @@ export default function WalletButton() {
                                         <button
                                             key={w.adapter.name}
                                             className="wallet-option"
-                                            onClick={() => handleConnect(w.adapter)}
+                                            onClick={handleConnect}
                                             disabled={connecting}
                                         >
                                             <span>{w.adapter.name}</span>
