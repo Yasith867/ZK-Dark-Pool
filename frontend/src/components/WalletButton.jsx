@@ -1,62 +1,27 @@
-import { useState, useEffect } from 'react'
+import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
+import { useState } from 'react'
 
 export default function WalletButton() {
-    const [publicKey, setPublicKey] = useState(null)
+    const { wallets, publicKey, select, connect, disconnect, connecting } = useWallet()
     const [showModal, setShowModal] = useState(false)
-    const [connecting, setConnecting] = useState(false)
-
-    // Check if wallet is already connected on mount
-    useEffect(() => {
-        const checkConnection = async () => {
-            if (window.leoWallet) {
-                try {
-                    const account = await window.leoWallet.getAccount()
-                    if (account) {
-                        setPublicKey(account)
-                    }
-                } catch (error) {
-                    // Not connected yet
-                }
-            }
-        }
-        checkConnection()
-    }, [])
 
     const handleConnect = async () => {
-        if (!window.leoWallet) {
-            alert('Leo Wallet not found! Please install it from https://leo.app/')
-            return
-        }
-
-        setConnecting(true)
         try {
-            // Use Leo Wallet's requestConnection method
-            await window.leoWallet.requestConnection({
-                dappName: 'ZK Dark Pool',
-                chainID: 'testnet'
-            })
-
-            // Get the account after connection
-            const account = await window.leoWallet.getAccount()
-            setPublicKey(account)
+            // Select Leo Wallet
+            await select("Leo Wallet")
+            // Connect with no arguments
+            await connect()
             setShowModal(false)
-            console.log('Connected to Leo Wallet:', account)
         } catch (error) {
-            console.error('Failed to connect to Leo Wallet:', error)
-            alert(`Failed to connect: ${error.message || 'Please try again'}`)
-        } finally {
-            setConnecting(false)
+            console.error('Connection error:', error)
         }
     }
 
     const handleDisconnect = async () => {
-        if (window.leoWallet) {
-            try {
-                await window.leoWallet.disconnect()
-                setPublicKey(null)
-            } catch (error) {
-                console.error('Failed to disconnect:', error)
-            }
+        try {
+            await disconnect()
+        } catch (error) {
+            console.error('Disconnect error:', error)
         }
     }
 
@@ -94,21 +59,24 @@ export default function WalletButton() {
                             <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
                         </div>
                         <div className="wallet-modal-body">
-                            {window.leoWallet ? (
+                            {wallets && wallets.length > 0 ? (
                                 <div className="wallet-list">
-                                    <button
-                                        className="wallet-option"
-                                        onClick={handleConnect}
-                                        disabled={connecting}
-                                    >
-                                        <span>Leo Wallet</span>
-                                    </button>
+                                    {wallets.map((w) => (
+                                        <button
+                                            key={w.adapter.name}
+                                            className="wallet-option"
+                                            onClick={handleConnect}
+                                            disabled={connecting}
+                                        >
+                                            <span>{w.adapter.name}</span>
+                                        </button>
+                                    ))}
                                 </div>
                             ) : (
                                 <div className="wallet-empty">
-                                    <p>Leo Wallet not detected</p>
+                                    <p>No wallets detected</p>
                                     <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                                        Please install <a href="https://leo.app/" target="_blank" rel="noopener">Leo Wallet</a>
+                                        Install <a href="https://leo.app/" target="_blank" rel="noopener">Leo Wallet</a>
                                     </p>
                                 </div>
                             )}
