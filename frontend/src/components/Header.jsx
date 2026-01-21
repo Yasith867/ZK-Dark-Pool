@@ -1,18 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
-import { WalletMultiButton } from '@demox-labs/aleo-wallet-adapter-reactui'
-import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
 import useAleo from '../hooks/useAleo'
+import WalletButton from './WalletButton'
 
 export default function Header() {
     const location = useLocation()
-    const { connected, publicKey } = useWallet()
 
     const isActive = (path) => location.pathname === path ? 'active' : ''
-
-    const truncateAddress = (addr) => {
-        if (!addr) return ''
-        return `${addr.slice(0, 6)}...${addr.slice(-4)}`
-    }
 
     return (
         <header className="header">
@@ -36,7 +29,7 @@ export default function Header() {
             <NetworkStatus />
 
             <div className="header-actions">
-                <WalletMultiButton />
+                <WalletButton />
             </div>
         </header>
     )
