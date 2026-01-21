@@ -43,22 +43,22 @@ export default function WalletButton() {
                     return;
                 }
 
-                // Select wallet - adapter tracks this internally
+                // Select wallet - this returns immediately  
                 select(walletName);
 
-                // Longer delay to ensure selection completes and popup can open
-                await new Promise((r) => setTimeout(r, 300));
+                // Wait for next tick to allow React state to update
+                await new Promise((r) => setTimeout(r, 0));
 
-                // Connect with NO arguments - adapter knows which wallet is selected
-                await connect();
+                // Connect using the chosen adapter directly
+                await chosen.adapter.connect();
 
                 setShowModal(false);
             } catch (error) {
                 console.error("Connection error:", error);
-                alert("Failed to connect. Please ensure Leo Wallet extension is unlocked and approve the connection.");
+                alert(`Failed to connect: ${error.message || 'Unknown error'}. Please try again.`);
             }
         },
-        [wallets, select, connect, connected]
+        [wallets, select, connected]
     );
 
     const handleDisconnect = useCallback(async () => {
