@@ -48,6 +48,19 @@ program dark_pool_market.aleo {
     mapping pools: field => PoolState;
 
     // ============================================
+    // CONSTRUCTOR (Required for deployment)
+    // ============================================
+
+    async transition constructor() -> Future {
+        return finalize_constructor();
+    }
+
+    async function finalize_constructor() {
+        // Initialize any default state if needed
+        // This constructor is called once during deployment
+    }
+
+    // ============================================
     // TRANSITIONS
     // ============================================
 
