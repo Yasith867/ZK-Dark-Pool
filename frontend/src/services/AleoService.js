@@ -23,18 +23,21 @@ class AleoService {
      */
     async getMappingValue(mappingName, key) {
         try {
-            const url = `${this.rpcUrl}/program/${this.programId}/mapping/${mappingName}/${key}`
+            // Correct testnet API format
+            const url = `${this.rpcUrl}/testnet/program/${this.programId}/mapping/${mappingName}/${key}`
             const response = await fetch(url)
 
             if (!response.ok) {
                 if (response.status === 404) {
+                    console.log(`Mapping ${mappingName}[${key}] not found`)
                     return null // Key not found
                 }
                 throw new Error(`Failed to fetch mapping: ${response.statusText}`)
             }
 
             const data = await response.text()
-            return data ? JSON.parse(data) : null
+            // Aleo API returns plain text Leo format, not JSON
+            return data || null
         } catch (error) {
             console.error(`Error reading mapping ${mappingName}[${key}]:`, error)
             return null
@@ -73,16 +76,18 @@ class AleoService {
         try {
             // Aleo struct format: "{ field1: value1, field2: value2 }"
             const cleaned = value.replace(/\s/g, '')
-            const match = cleaned.match(/\{creator:(\w+),resolution_time:(\d+)u64,resolved:(true|false),winning_outcome:(\d+)u8\}/)
+            // Updated for resolution_height (u32) instead of resolution_time (u64)
+            const match = cleaned.match(/\{creator:(aleo1[\w]+),resolution_height:(\d+)u32,resolved:(true|false),winning_outcome:(\d+)u8\}/)
 
             if (!match) {
                 console.warn('Could not parse MarketInfo:', value)
+                console.warn('Expected format: {creator:aleo1...,resolution_height:NNNu32,resolved:true/false,winning_outcome:Nu8}')
                 return null
             }
 
             return {
                 creator: match[1],
-                resolutionTime: parseInt(match[2]),
+                resolutionHeight: parseInt(match[2]),
                 resolved: match[3] === 'true',
                 winningOutcome: parseInt(match[4]),
             }
@@ -123,8 +128,10 @@ class AleoService {
      */
     async programExists() {
         try {
-            const url = `${this.rpcUrl}/program/${this.programId}`
+            const url = `${this.rpcUrl}/testnet/program/${this.programId}`
+            console.log('Checking program at:', url)
             const response = await fetch(url)
+            console.log('Program exists:', response.ok)
             return response.ok
         } catch (error) {
             console.error('Error checking program:', error)
@@ -195,10 +202,10 @@ class AleoService {
      * @param {number} resolutionTime - Unix timestamp for resolution
      * @returns {Array<string>}
      */
-    buildCreateMarketInputs(marketId, resolutionTime) {
+    buildCreateMarketInputs(marketId, resolutionHeight) {
         return [
             `${marketId}field`,
-            `${resolutionTime}u64`,
+            `${resolutionHeight}u32`, // Changed to u32 to match contract
         ]
     }
 

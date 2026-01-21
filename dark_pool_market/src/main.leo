@@ -1,22 +1,19 @@
-// ZK Dark Pool Prediction Market
+// ZK Dark Pool Prediction Market (Leo 3.4.0)
 // Privacy-preserving prediction market on Aleo
-// Bets are hidden until resolution - no one can see your position
 
 program dark_pool_market.aleo {
 
     // ============================================
     // RECORDS (Private State)
     // ============================================
-    
-    // Private bet record - only the owner can see this
+
     record Bet {
         owner: address,
         market_id: field,
-        outcome: u8,             // 0 = NO, 1 = YES
+        outcome: u8,     // 0 = NO, 1 = YES
         amount: u64,
     }
 
-    // Claim record for winners
     record WinClaim {
         owner: address,
         market_id: field,
@@ -24,14 +21,14 @@ program dark_pool_market.aleo {
     }
 
     // ============================================
-    // STRUCTS (Data Types)
+    // STRUCTS (Public State)
     // ============================================
-    
+
     struct MarketInfo {
         creator: address,
-        resolution_time: u64,
+        resolution_height: u32,
         resolved: bool,
-        winning_outcome: u8,     // 0 = NO, 1 = YES, 255 = unresolved
+        winning_outcome: u8, // 0 = NO, 1 = YES, 255 = unresolved
     }
 
     struct PoolState {
@@ -43,21 +40,16 @@ program dark_pool_market.aleo {
     // ============================================
     // MAPPINGS (Public State)
     // ============================================
-    
+
     mapping markets: field => MarketInfo;
     mapping pools: field => PoolState;
 
     // ============================================
-    // CONSTRUCTOR (Required for deployment)
+    // CONSTRUCTOR
     // ============================================
-
-    async constructor() -> Future {
-        return finalize_constructor();
-    }
-
-    async function finalize_constructor() {
-        // Initialize any default state if needed
-        // This is called once during deployment
+    // For @noupgrade, constructor MUST be empty (compiler inserts code).
+    @noupgrade
+    async constructor() {
     }
 
     // ============================================
@@ -67,81 +59,85 @@ program dark_pool_market.aleo {
     // Create a new prediction market
     async transition create_market(
         public market_id: field,
-        public resolution_time: u64,
+        public resolution_height: u32,
     ) -> Future {
-        return finalize_create_market(market_id, resolution_time, self.caller);
+        // self.signer is the user who originated the call (safer than self.caller for ownership).
+        return finalize_create_market(market_id, resolution_height, self.signer);
     }
-    
+
     async function finalize_create_market(
         market_id: field,
-        resolution_time: u64,
+        resolution_height: u32,
         creator: address,
     ) {
         // Ensure market doesn't exist
         assert(!Mapping::contains(markets, market_id));
-        
-        // Create market info
+
+        // Must resolve in the future
+        assert(resolution_height > block.height);
+
         let market: MarketInfo = MarketInfo {
             creator: creator,
-            resolution_time: resolution_time,
+            resolution_height: resolution_height,
             resolved: false,
             winning_outcome: 255u8,
         };
-        
-        // Initialize pool
+
         let pool: PoolState = PoolState {
             total_yes: 0u64,
             total_no: 0u64,
             total_pool: 0u64,
         };
-        
+
         Mapping::set(markets, market_id, market);
         Mapping::set(pools, market_id, pool);
     }
 
-    // Place a private bet - KEY PRIVACY FUNCTION
+    // Place a private bet (creates a private record + updates public pool)
     async transition place_bet(
         public market_id: field,
         private outcome: u8,
         private amount: u64,
     ) -> (Bet, Future) {
-        // Validate outcome (0 = NO, 1 = YES)
         assert(outcome == 0u8 || outcome == 1u8);
         assert(amount > 0u64);
-        
-        // Create private bet record
+
+        // Use self.signer so a program caller can’t become the record owner.
         let bet: Bet = Bet {
-            owner: self.caller,
+            owner: self.signer,
             market_id: market_id,
             outcome: outcome,
             amount: amount,
         };
-        
+
         return (bet, finalize_place_bet(market_id, outcome, amount));
     }
-    
+
     async function finalize_place_bet(
         market_id: field,
         outcome: u8,
         amount: u64,
     ) {
-        // Get current market state
+        // Ensure market exists
+        assert(Mapping::contains(markets, market_id));
+
         let market: MarketInfo = Mapping::get(markets, market_id);
+
+        // Must be open
         assert(!market.resolved);
-        
-        // Get current pool
+        assert(block.height < market.resolution_height);
+
         let pool: PoolState = Mapping::get(pools, market_id);
-        
-        // Update pool based on outcome
-        let new_yes: u64 = pool.total_yes + (outcome == 1u8 ? amount : 0u64);
-        let new_no: u64 = pool.total_no + (outcome == 0u8 ? amount : 0u64);
-        
+
+        let add_yes: u64 = outcome == 1u8 ? amount : 0u64;
+        let add_no:  u64 = outcome == 0u8 ? amount : 0u64;
+
         let new_pool: PoolState = PoolState {
-            total_yes: new_yes,
-            total_no: new_no,
+            total_yes: pool.total_yes + add_yes,
+            total_no: pool.total_no + add_no,
             total_pool: pool.total_pool + amount,
         };
-        
+
         Mapping::set(pools, market_id, new_pool);
     }
 
@@ -151,29 +147,35 @@ program dark_pool_market.aleo {
         public winning_outcome: u8,
     ) -> Future {
         assert(winning_outcome == 0u8 || winning_outcome == 1u8);
-        return finalize_resolve_market(market_id, winning_outcome, self.caller);
+        return finalize_resolve_market(market_id, winning_outcome, self.signer);
     }
-    
+
     async function finalize_resolve_market(
         market_id: field,
         winning_outcome: u8,
         caller: address,
     ) {
+        assert(Mapping::contains(markets, market_id));
+
         let market: MarketInfo = Mapping::get(markets, market_id);
+
         assert(!market.resolved);
         assert_eq(market.creator, caller);
-        
+
+        // Can only resolve at/after resolution_height
+        assert(block.height >= market.resolution_height);
+
         let resolved_market: MarketInfo = MarketInfo {
             creator: market.creator,
-            resolution_time: market.resolution_time,
+            resolution_height: market.resolution_height,
             resolved: true,
             winning_outcome: winning_outcome,
         };
-        
+
         Mapping::set(markets, market_id, resolved_market);
     }
 
-    // Claim winnings - prove ownership via ZK
+    // Claim winnings - private proof that your bet matches winning outcome
     async transition claim_winnings(
         private bet: Bet,
     ) -> (WinClaim, Future) {
@@ -182,16 +184,18 @@ program dark_pool_market.aleo {
             market_id: bet.market_id,
             payout: bet.amount,
         };
-        
-        return (claim, finalize_claim_winnings(bet.market_id, bet.outcome, bet.amount));
+
+        return (claim, finalize_claim_winnings(bet.market_id, bet.outcome));
     }
-    
+
     async function finalize_claim_winnings(
         market_id: field,
         outcome: u8,
-        amount: u64,
     ) {
+        assert(Mapping::contains(markets, market_id));
+
         let market: MarketInfo = Mapping::get(markets, market_id);
+
         assert(market.resolved);
         assert_eq(outcome, market.winning_outcome);
     }

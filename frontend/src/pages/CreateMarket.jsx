@@ -56,29 +56,32 @@ export default function CreateMarket() {
             // Generate market ID from question
             const marketId = generateMarketId(formData.question)
 
-            // Calculate resolution time (current time + days in seconds)
-            const resolutionTime = Math.floor(Date.now() / 1000) + (parseInt(formData.resolutionDays) * 86400)
+            // IMPORTANT: Contract uses resolution_height (block height), not timestamp
+            // Estimate: ~5 seconds per block on testnet
+            // Calculate approximate block height for resolution
+            const blocksPerDay = (24 * 60 * 60) / 5  // ~17,280 blocks/day
+            const blocksToAdd = Math.floor(parseInt(formData.resolutionDays) * blocksPerDay)
+            // Start from current estimated block height (placeholder - would need real API call)
+            const estimatedCurrentHeight = 3000000  // Testnet is around this range
+            const resolutionHeight = estimatedCurrentHeight + blocksToAdd
 
             setTxStatus('Building transaction...')
 
             // Build transaction inputs
-            const inputs = aleoService.buildCreateMarketInputs(marketId, resolutionTime)
+            const inputs = aleoService.buildCreateMarketInputs(marketId, resolutionHeight)
 
             setTxStatus('Requesting wallet signature...')
 
-            // Create the transaction object for Leo Wallet
-            const aleoTransaction = Transaction.createTransaction(
-                publicKey,
-                WalletAdapterNetwork.Testnet,
-                ALEO_CONFIG.programId,
-                'create_market',
-                inputs,
-                ALEO_CONFIG.fees.createMarket,
-                false // feePrivate
-            )
-
-            // Request transaction from wallet
-            const txId = await requestTransaction(aleoTransaction)
+            // Use Leo Wallet's requestTransaction format (not Transaction.createTransaction)
+            const txId = await requestTransaction({
+                transitions: [{
+                    program: ALEO_CONFIG.programId,
+                    functionName: 'create_market',
+                    inputs: inputs,
+                }],
+                fee: ALEO_CONFIG.fees.createMarket,
+                wait: true,  // Wait for transaction confirmation
+            })
 
             console.log('Market created:', txId)
             setTxStatus('Transaction submitted!')
