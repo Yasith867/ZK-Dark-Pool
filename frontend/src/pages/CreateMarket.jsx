@@ -4,6 +4,7 @@ import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
 import { Transaction, WalletAdapterNetwork } from '@demox-labs/aleo-wallet-adapter-base'
 import { ALEO_CONFIG, getExplorerUrl } from '../config'
 import aleoService from '../services/AleoService'
+import marketStorage from '../services/MarketStorage'
 
 export default function CreateMarket() {
     const navigate = useNavigate()
@@ -85,6 +86,11 @@ export default function CreateMarket() {
 
             console.log('Market created:', txId)
             setTxStatus('Transaction submitted!')
+
+            // Save to market tracking
+            marketStorage.addMarket(marketId, formData.question)
+            console.log('Market saved to storage')
+
             setTxResult({
                 txId,
                 marketId,

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import MarketCard from '../components/MarketCard'
 import useAleo from '../hooks/useAleo'
 import { ALEO_CONFIG, getExplorerUrl } from '../config'
+import aleoService from '../services/AleoService'
+import marketStorage from '../services/MarketStorage'
 
 // Demo markets for display when program not deployed
 const DEMO_MARKETS = [
@@ -54,10 +56,61 @@ export default function Markets() {
         const loadMarkets = async () => {
             setIsLoading(true)
 
-            // For now, use demo markets
-            // TODO: When program is deployed, fetch real markets from blockchain
-            await new Promise(resolve => setTimeout(resolve, 500))
-            setMarkets(DEMO_MARKETS)
+            if (!programDeployed) {
+                console.log('Program not deployed, showing demo markets')
+                setMarkets(DEMO_MARKETS)
+                setIsLoading(false)
+                return
+            }
+
+            try {
+                console.log('Fetching real markets from blockchain...')
+                const trackedMarketIDs = marketStorage.getMarketIds()
+                console.log('Tracked markets:', trackedMarketIDs)
+
+                if (trackedMarketIDs.length === 0) {
+                    console.log('No markets tracked yet. Create one to see it here!')
+                    setMarkets([])
+                    setIsLoading(false)
+                    return
+                }
+
+                // Fetch each market's data from blockchain
+                const marketPromises = trackedMarketIDs.map(async (tracked) => {
+                    try {
+                        const marketInfo = await aleoService.getMarket(tracked.id)
+                        const poolState = await aleoService.getPool(tracked.id)
+
+                        if (!marketInfo || !poolState) {
+                            console.warn(`Market ${tracked.id} not found on-chain`)
+                            return null
+                        }
+
+                        return {
+                            id: tracked.id,
+                            question: tracked.question,
+                            resolutionHeight: marketInfo.resolutionHeight,
+                            resolved: marketInfo.resolved,
+                            winningOutcome: marketInfo.winningOutcome,
+                            totalYes: poolState.totalYes,
+                            totalNo: poolState.totalNo,
+                            totalPool: poolState.totalPool,
+                            creator: marketInfo.creator,
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching market ${tracked.id}:`, error)
+                        return null
+                    }
+                })
+
+                const loadedMarkets = (await Promise.all(marketPromises)).filter(m => m !== null)
+                console.log('Loaded markets:', loadedMarkets)
+                setMarkets(loadedMarkets)
+
+            } catch (error) {
+                console.error('Error loading markets:', error)
+                setMarkets(DEMO_MARKETS) // Fallback to demo
+            }
 
             setIsLoading(false)
         }
