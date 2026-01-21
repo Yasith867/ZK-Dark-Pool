@@ -4,7 +4,6 @@ import { useWallet } from "@demox-labs/aleo-wallet-adapter-react";
 export default function WalletButton() {
     const {
         wallets,
-        wallet,
         publicKey,
         select,
         connect,
@@ -32,30 +31,19 @@ export default function WalletButton() {
     const handleConnect = useCallback(
         async (walletName) => {
             try {
-                // Ensure wallet exists
                 const chosen = wallets.find((w) => w?.adapter?.name === walletName);
                 if (!chosen) {
                     console.error("Wallet adapter not found:", walletName);
                     return;
                 }
 
-                // Always select to ensure fresh selection
+                // Select wallet - adapter tracks this internally
                 select(walletName);
 
-                // Wait for wallet to actually be selected (check up to 10 times)
-                let attempts = 0;
-                while (attempts < 10 && (!wallet || wallet.adapter?.name !== walletName)) {
-                    await new Promise((r) => setTimeout(r, 100));
-                    attempts++;
-                }
+                // Small delay to allow selection to register
+                await new Promise((r) => setTimeout(r, 100));
 
-                // Verify wallet is selected before connecting
-                if (!wallet || wallet.adapter?.name !== walletName) {
-                    console.error("Wallet selection failed after timeout");
-                    return;
-                }
-
-                // Connect with NO arguments
+                // Connect with NO arguments - adapter knows which wallet is selected
                 await connect();
 
                 setShowModal(false);
@@ -63,7 +51,7 @@ export default function WalletButton() {
                 console.error("Connection error:", error);
             }
         },
-        [wallets, wallet, select, connect]
+        [wallets, select, connect]
     );
 
     const handleDisconnect = useCallback(async () => {
