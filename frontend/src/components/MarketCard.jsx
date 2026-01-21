@@ -1,0 +1,67 @@
+import { useNavigate } from 'react-router-dom'
+
+export default function MarketCard({ market }) {
+    const navigate = useNavigate()
+
+    const formatCredits = (amount) => {
+        return new Intl.NumberFormat('en-US', {
+            maximumFractionDigits: 0,
+        }).format(amount)
+    }
+
+    const getTimeRemaining = (resolutionTime) => {
+        const now = Date.now()
+        const resolution = resolutionTime * 1000  // Convert to ms
+        const diff = resolution - now
+
+        if (diff <= 0) return 'Ended'
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+
+        if (days > 0) return `${days}d ${hours}h left`
+        return `${hours}h left`
+    }
+
+    return (
+        <div
+            className="market-card animate-fade-in"
+            onClick={() => navigate(`/market/${market.id}`)}
+        >
+            <div className="market-card-header">
+                <h3 className="market-card-question">{market.question}</h3>
+                <span className={`market-card-status ${market.resolved ? 'resolved' : 'open'}`}>
+                    {market.resolved ? 'Resolved' : 'Open'}
+                </span>
+            </div>
+
+            <div className="market-card-pool">
+                <div className="pool-stat">
+                    <div className="pool-stat-label">Yes Pool</div>
+                    <div className="pool-stat-value yes">
+                        {formatCredits(market.totalYes)}
+                    </div>
+                </div>
+                <div className="pool-stat">
+                    <div className="pool-stat-label">No Pool</div>
+                    <div className="pool-stat-value no">
+                        {formatCredits(market.totalNo)}
+                    </div>
+                </div>
+                <div className="pool-stat">
+                    <div className="pool-stat-label">Total</div>
+                    <div className="pool-stat-value">
+                        {formatCredits(market.totalYes + market.totalNo)}
+                    </div>
+                </div>
+            </div>
+
+            <div className="market-card-footer">
+                <span className="market-card-time">
+                    {getTimeRemaining(market.resolutionTime)}
+                </span>
+                <span className="privacy-indicator private">Hidden Positions</span>
+            </div>
+        </div>
+    )
+}
