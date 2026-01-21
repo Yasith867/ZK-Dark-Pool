@@ -31,7 +31,6 @@ function App() {
             wallets={wallets}
             network={WalletAdapterNetwork.Testnet}
             decryptPermission={DecryptPermission.UponRequest}
-            autoConnect
         >
             <WalletModalProvider>
                 <BrowserRouter>

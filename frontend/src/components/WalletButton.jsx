@@ -44,7 +44,7 @@ export default function WalletButton() {
                     select(walletName);
 
                     // Let selection state apply before connect()
-                    await new Promise((r) => setTimeout(r, 0));
+                    await new Promise((r) => setTimeout(r, 50));
                 }
 
                 // Connect with NO arguments
