@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { WalletMultiButton } from '@demox-labs/aleo-wallet-adapter-reactui'
 import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
+import useAleo from '../hooks/useAleo'
 
 export default function Header() {
     const location = useLocation()
@@ -32,14 +33,41 @@ export default function Header() {
                 <Link to="/portfolio" className={isActive('/portfolio')}>Portfolio</Link>
             </nav>
 
+            <NetworkStatus />
+
             <div className="header-actions">
-                {connected && (
-                    <span className="privacy-indicator private">
-                        {truncateAddress(publicKey)}
-                    </span>
-                )}
                 <WalletMultiButton />
             </div>
         </header>
+    )
+}
+
+// Network status component
+function NetworkStatus() {
+    const { programDeployed, isCheckingProgram } = useAleo()
+
+    if (isCheckingProgram) {
+        return (
+            <div className="network-status checking">
+                <span className="status-dot"></span>
+                <span className="status-text">Checking...</span>
+            </div>
+        )
+    }
+
+    if (programDeployed) {
+        return (
+            <div className="network-status connected">
+                <span className="status-dot"></span>
+                <span className="status-text">Testnet</span>
+            </div>
+        )
+    }
+
+    return (
+        <div className="network-status disconnected">
+            <span className="status-dot"></span>
+            <span className="status-text">Offline</span>
+        </div>
     )
 }
