@@ -51,13 +51,13 @@ program dark_pool_market.aleo {
     // CONSTRUCTOR (Required for deployment)
     // ============================================
 
-    async transition constructor() -> Future {
-        return finalize_constructor();
+    async transition init() -> Future {
+        return finalize_init();
     }
 
-    async function finalize_constructor() {
+    async function finalize_init() {
         // Initialize any default state if needed
-        // This constructor is called once during deployment
+        // This is called once during deployment
     }
 
     // ============================================
