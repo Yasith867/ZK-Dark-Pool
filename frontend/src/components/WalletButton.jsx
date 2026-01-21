@@ -2,16 +2,23 @@ import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
 import { useState } from 'react'
 
 export default function WalletButton() {
-    const { wallets, wallet, publicKey, select, disconnect, connecting } = useWallet()
+    const { wallets, wallet, publicKey, select, connect, disconnect, connecting } = useWallet()
     const [showModal, setShowModal] = useState(false)
 
     const handleConnect = async (walletToConnect) => {
         try {
-            // Select the wallet - since autoConnect is true in App.jsx, it will connect automatically
-            select(walletToConnect.adapter)
+            // Select the wallet by name
+            await select(walletToConnect.adapter.name)
             setShowModal(false)
+            // Connection will happen automatically due to autoConnect in App.jsx
         } catch (error) {
             console.error('Failed to select wallet:', error)
+            // If autoConnect didn't work, try manual connect
+            try {
+                await connect()
+            } catch (connectError) {
+                console.error('Failed to connect:', connectError)
+            }
         }
     }
 
