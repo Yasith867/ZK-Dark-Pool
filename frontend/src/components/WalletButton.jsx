@@ -3,27 +3,19 @@ import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
 import { useState } from 'react'
 
 export default function WalletButton() {
-    const { wallets, publicKey, wallet, select, connect, disconnect, connecting } = useWallet()
+    const { wallets, publicKey, select, connect, disconnect, connecting } = useWallet()
     const [showModal, setShowModal] = useState(false)
 
     const handleConnect = useCallback(async () => {
         try {
-            // Find Leo wallet from the adapter list
-            const leo = wallets.find((w) =>
-                String(w?.adapter?.name || "").toLowerCase().includes("leo")
-            )
+            const leo = wallets.find(w => String(w?.adapter?.name || "").toLowerCase().includes("leo"))
             if (!leo) {
                 console.error("Leo wallet adapter not found")
                 return
             }
 
-            // MUST select first (synchronous)
             select(leo.adapter.name)
-
-            // Wait a tick for selection to complete
-            await new Promise(resolve => setTimeout(resolve, 100))
-
-            // MUST connect with NO parameters
+            await new Promise(r => setTimeout(r, 0))
             await connect()
 
             setShowModal(false)
