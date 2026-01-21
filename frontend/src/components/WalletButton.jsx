@@ -2,16 +2,19 @@ import { useWallet } from '@demox-labs/aleo-wallet-adapter-react'
 import { useState } from 'react'
 
 export default function WalletButton() {
-    const { wallets, wallet, publicKey, select, disconnect, connecting } = useWallet()
+    const { wallets, wallet, publicKey, select, connect, disconnect, connecting } = useWallet()
     const [showModal, setShowModal] = useState(false)
 
     const handleConnect = async (walletToConnect) => {
         try {
-            // Just select the wallet - Leo Wallet will handle the connection popup
+            // First select the wallet
             await select(walletToConnect.adapter.name)
             setShowModal(false)
+
+            // Then connect to it - this will trigger the Leo Wallet popup
+            await connect()
         } catch (error) {
-            console.error('Error selecting wallet:', error)
+            console.error('Error connecting wallet:', error)
         }
     }
 
