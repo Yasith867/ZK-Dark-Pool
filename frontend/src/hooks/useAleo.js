@@ -13,7 +13,24 @@ import aleoService from '../services/AleoService'
 import { ALEO_CONFIG } from '../config'
 
 export function useAleo() {
-    const wallet = useWallet()
+    //  Handle wallet context being unavailable during initial render
+    let wallet
+    try {
+        wallet = useWallet()
+    } catch (error) {
+        // WalletProvider not ready yet - return safe defaults
+        console.warn('WalletContext not available yet:', error.message)
+        wallet = {
+            connected: false,
+            publicKey: null,
+            wallet: null,
+            wallets: [],
+            connect: async () => { },
+            disconnect: async () => { },
+            requestTransaction: async () => { },
+        }
+    }
+
     const [programDeployed, setProgramDeployed] = useState(null)
     const [isCheckingProgram, setIsCheckingProgram] = useState(true)
 
