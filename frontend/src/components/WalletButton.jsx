@@ -39,12 +39,20 @@ export default function WalletButton() {
                     return;
                 }
 
-                // Select only if not already selected
-                if (!wallet || wallet.adapter?.name !== walletName) {
-                    select(walletName);
+                // Always select to ensure fresh selection
+                select(walletName);
 
-                    // Let selection state apply before connect()
-                    await new Promise((r) => setTimeout(r, 50));
+                // Wait for wallet to actually be selected (check up to 10 times)
+                let attempts = 0;
+                while (attempts < 10 && (!wallet || wallet.adapter?.name !== walletName)) {
+                    await new Promise((r) => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                // Verify wallet is selected before connecting
+                if (!wallet || wallet.adapter?.name !== walletName) {
+                    console.error("Wallet selection failed after timeout");
+                    return;
                 }
 
                 // Connect with NO arguments
