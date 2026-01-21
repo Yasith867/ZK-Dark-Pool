@@ -37,11 +37,17 @@ export default function WalletButton() {
                     return;
                 }
 
+                // Don't reconnect if already connected
+                if (connected) {
+                    setShowModal(false);
+                    return;
+                }
+
                 // Select wallet - adapter tracks this internally
                 select(walletName);
 
-                // Small delay to allow selection to register
-                await new Promise((r) => setTimeout(r, 100));
+                // Longer delay to ensure selection completes and popup can open
+                await new Promise((r) => setTimeout(r, 300));
 
                 // Connect with NO arguments - adapter knows which wallet is selected
                 await connect();
@@ -49,9 +55,10 @@ export default function WalletButton() {
                 setShowModal(false);
             } catch (error) {
                 console.error("Connection error:", error);
+                alert("Failed to connect. Please ensure Leo Wallet extension is unlocked and approve the connection.");
             }
         },
-        [wallets, select, connect]
+        [wallets, select, connect, connected]
     );
 
     const handleDisconnect = useCallback(async () => {
