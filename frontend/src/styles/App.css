@@ -161,6 +161,30 @@
     cursor: not-allowed;
 }
 
+/* Wallet Modal Z-Index Fix */
+.wallet-adapter-modal-wrapper {
+    z-index: 10000 !important;
+}
+
+.wallet-adapter-modal-overlay {
+    z-index: 9999 !important;
+}
+
+.wallet-adapter-modal {
+    z-index: 10001 !important;
+    pointer-events: auto !important;
+}
+
+.wallet-adapter-button {
+    background: var(--color-accent) !important;
+    border-radius: var(--radius-md) !important;
+    height: 40px !important;
+}
+
+.wallet-adapter-button:hover {
+    background: var(--color-accent-hover) !important;
+}
+
 .wallet-button.connected {
     background: var(--color-bg-tertiary);
     border: 1px solid var(--color-border);
