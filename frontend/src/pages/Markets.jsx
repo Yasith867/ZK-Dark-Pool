@@ -126,56 +126,6 @@ export default function Markets() {
 
     return (
         <div className="markets-page">
-            {/* Network Status Banner */}
-            <div style={{
-                marginBottom: 'var(--spacing-xl)',
-                padding: 'var(--spacing-md)',
-                background: isCheckingProgram ? 'var(--color-bg-tertiary)' :
-                    programDeployed ? 'var(--color-yes-bg)' :
-                        'rgba(245, 158, 11, 0.1)',
-                border: `1px solid ${isCheckingProgram ? 'var(--color-border)' :
-                    programDeployed ? 'var(--color-yes)' :
-                        '#f59e0b'}`,
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 'var(--spacing-md)'
-            }}>
-                <div>
-                    <strong style={{
-                        color: isCheckingProgram ? 'var(--color-text-secondary)' :
-                            programDeployed ? 'var(--color-yes)' :
-                                '#f59e0b'
-                    }}>
-                        {isCheckingProgram ? 'Checking network status...' :
-                            programDeployed ? 'Connected to Aleo Testnet' :
-                                'Demo Mode - Program Not Deployed'}
-                    </strong>
-                    <p style={{
-                        color: 'var(--color-text-muted)',
-                        fontSize: '0.875rem',
-                        margin: 0
-                    }}>
-                        {isCheckingProgram ? 'Verifying smart contract...' :
-                            programDeployed ? `Program: ${ALEO_CONFIG.programId}` :
-                                'The smart contract needs to be deployed to enable real transactions.'}
-                    </p>
-                </div>
-                {!isCheckingProgram && (
-                    <a
-                        href={getExplorerUrl('program', ALEO_CONFIG.programId)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-outline"
-                        style={{ fontSize: '0.875rem' }}
-                    >
-                        View on Aleoscan
-                    </a>
-                )}
-            </div>
-
             <div className="markets-header">
                 <div>
                     <h2>Prediction Markets</h2>
