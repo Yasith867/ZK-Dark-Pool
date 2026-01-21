@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
+import { WalletMultiButton } from '@demox-labs/aleo-wallet-adapter-reactui'
 import useAleo from '../hooks/useAleo'
-import WalletButton from './WalletButton'
 
 export default function Header() {
     const location = useLocation()
@@ -29,7 +29,7 @@ export default function Header() {
             <NetworkStatus />
 
             <div className="header-actions">
-                <WalletButton />
+                <WalletMultiButton />
             </div>
         </header>
     )
