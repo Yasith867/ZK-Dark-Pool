@@ -30,18 +30,20 @@ export default function WalletButton() {
 
         setConnecting(true)
         try {
-            // Direct connection to Leo Wallet
-            const account = await window.leoWallet.connect({
-                appName: 'ZK Dark Pool',
-                network: 'testnet'
+            // Use Leo Wallet's requestConnection method
+            await window.leoWallet.requestConnection({
+                dappName: 'ZK Dark Pool',
+                chainID: 'testnet'
             })
 
+            // Get the account after connection
+            const account = await window.leoWallet.getAccount()
             setPublicKey(account)
             setShowModal(false)
             console.log('Connected to Leo Wallet:', account)
         } catch (error) {
             console.error('Failed to connect to Leo Wallet:', error)
-            alert('Failed to connect. Please try again.')
+            alert(`Failed to connect: ${error.message || 'Please try again'}`)
         } finally {
             setConnecting(false)
         }
