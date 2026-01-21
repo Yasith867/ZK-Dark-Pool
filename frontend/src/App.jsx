@@ -29,8 +29,9 @@ function App() {
     return (
         <WalletProvider
             wallets={wallets}
-            decryptPermission={DecryptPermission.UponRequest}
             network={WalletAdapterNetwork.Testnet}
+            decryptPermission={DecryptPermission.UponRequest}
+            autoConnect
         >
             <WalletModalProvider>
                 <BrowserRouter>
